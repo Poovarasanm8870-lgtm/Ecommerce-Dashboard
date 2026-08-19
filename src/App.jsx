@@ -65,6 +65,7 @@ const AppContent = () => {
 };
 
 export default function App() {
+  // Use Vite's BASE_URL so routes automatically prefix with /Ecommerce-Dashboard/ on GitHub Pages
   return (
     <AuthProvider>
       <ProductProvider>
@@ -72,7 +73,7 @@ export default function App() {
           <WishlistProvider>
             <OrderProvider>
               <ToastProvider>
-                <Router>
+                <Router basename={import.meta.env.BASE_URL}>
                   <AppContent />
                 </Router>
               </ToastProvider>

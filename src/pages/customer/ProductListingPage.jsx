@@ -1,6 +1,6 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { SlidersHorizontal, Search, Star, X, Grid, List, RefreshCw } from 'lucide-react';
+import { SlidersHorizontal, Search, Star, X, RefreshCw } from 'lucide-react';
 import { useProducts } from '../../context/ProductContext';
 import { ProductCard } from '../../components/customer/ProductCard';
 
@@ -8,18 +8,22 @@ export const ProductListingPage = () => {
   const { products } = useProducts();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // URL state inputs
-  const initialCategory = searchParams.get('category') || 'All';
-  const initialSearch = searchParams.get('search') || '';
-
   // Local filter states
-  const [selectedCategory, setSelectedCategory] = useState(initialCategory);
-  const [searchQuery, setSearchQuery] = useState(initialSearch);
+  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [searchQuery, setSearchQuery] = useState('');
   const [priceRange, setPriceRange] = useState(25000);
   const [minRating, setMinRating] = useState(0);
   const [selectedBrand, setSelectedBrand] = useState('All');
   const [sortBy, setSortBy] = useState('featured');
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
+
+  // Sync state whenever URL query params change (e.g. clicking top Navbar links)
+  useEffect(() => {
+    const catFromUrl = searchParams.get('category') || 'All';
+    const searchFromUrl = searchParams.get('search') || '';
+    setSelectedCategory(catFromUrl);
+    setSearchQuery(searchFromUrl);
+  }, [searchParams]);
 
   // Extract unique brands
   const brands = useMemo(() => {
@@ -33,11 +37,22 @@ export const ProductListingPage = () => {
     return ['All', ...Array.from(cSet)];
   }, [products]);
 
+  // Filter category update handler
+  const handleCategorySelect = (cat) => {
+    setSelectedCategory(cat);
+    if (cat === 'All') {
+      searchParams.delete('category');
+    } else {
+      searchParams.set('category', cat);
+    }
+    setSearchParams(searchParams);
+  };
+
   // Filtering & Sorting Logic
   const filteredProducts = useMemo(() => {
     return products.filter(product => {
       // Category filter
-      if (selectedCategory !== 'All' && product.category !== selectedCategory) return false;
+      if (selectedCategory !== 'All' && product.category.toLowerCase() !== selectedCategory.toLowerCase()) return false;
       // Brand filter
       if (selectedBrand !== 'All' && product.brand !== selectedBrand) return false;
       // Search query
@@ -88,12 +103,27 @@ export const ProductListingPage = () => {
               type="text"
               placeholder="Filter catalog..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                if (e.target.value) {
+                  searchParams.set('search', e.target.value);
+                } else {
+                  searchParams.delete('search');
+                }
+                setSearchParams(searchParams);
+              }}
               className="w-full pl-9 pr-4 py-2 bg-slate-100 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:border-indigo-500"
             />
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
             {searchQuery && (
-              <button onClick={() => setSearchQuery('')} className="absolute right-3 top-2.5 text-slate-400">
+              <button
+                onClick={() => {
+                  setSearchQuery('');
+                  searchParams.delete('search');
+                  setSearchParams(searchParams);
+                }}
+                className="absolute right-3 top-2.5 text-slate-400"
+              >
                 <X className="w-4 h-4" />
               </button>
             )}
@@ -145,16 +175,16 @@ export const ProductListingPage = () => {
               {categories.map(cat => (
                 <button
                   key={cat}
-                  onClick={() => setSelectedCategory(cat)}
+                  onClick={() => handleCategorySelect(cat)}
                   className={`w-full text-left px-3 py-2 rounded-xl text-sm font-medium transition-colors flex items-center justify-between ${
-                    selectedCategory === cat
+                    selectedCategory.toLowerCase() === cat.toLowerCase()
                       ? 'bg-indigo-50 text-indigo-600 font-bold'
                       : 'text-slate-600 hover:bg-slate-50'
                   }`}
                 >
                   <span>{cat}</span>
                   <span className="text-xs text-slate-400">
-                    {cat === 'All' ? products.length : products.filter(p => p.category === cat).length}
+                    {cat === 'All' ? products.length : products.filter(p => p.category.toLowerCase() === cat.toLowerCase()).length}
                   </span>
                 </button>
               ))}

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Search, ShoppingBag, Heart, User, Menu, X, ShieldAlert, LayoutDashboard, LogOut, Sparkles, ChevronDown } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
@@ -7,6 +7,9 @@ import { useWishlist } from '../../context/WishlistContext';
 
 export const Navbar = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const activeCategory = searchParams.get('category') || 'All';
+
   const { user, logout, isAdmin } = useAuth();
   const { itemCount } = useCart();
   const { wishlist } = useWishlist();
@@ -21,6 +24,16 @@ export const Navbar = () => {
       navigate(`/products?search=${encodeURIComponent(searchQuery.trim())}`);
     }
   };
+
+  const navCategories = [
+    { label: 'All Products', param: 'All', path: '/products' },
+    { label: 'Electronics', param: 'Electronics', path: '/products?category=Electronics' },
+    { label: 'Fashion', param: 'Fashion', path: '/products?category=Fashion' },
+    { label: 'Accessories', param: 'Accessories', path: '/products?category=Accessories' },
+    { label: 'Wearables', param: 'Wearables', path: '/products?category=Wearables' },
+    { label: 'Footwear', param: 'Footwear', path: '/products?category=Footwear' },
+    { label: 'Home & Living', param: 'Home & Living', path: `/products?category=${encodeURIComponent('Home & Living')}` }
+  ];
 
   return (
     <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-slate-200/80 transition-all">
@@ -46,7 +59,7 @@ export const Navbar = () => {
           
           {/* Brand Logo */}
           <Link to="/" className="flex items-center gap-2 group shrink-0">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-600 flex items-center justify-center text-white font-extrabold text-xl shadow-md group-hover:scale-105 transition-transform">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center text-white font-extrabold text-xl shadow-md group-hover:scale-105 transition-transform">
               L
             </div>
             <div className="flex flex-col">
@@ -188,15 +201,22 @@ export const Navbar = () => {
           </div>
         </div>
 
-        {/* Categories Bar */}
+        {/* Categories Bar below Search */}
         <nav className="hidden md:flex items-center gap-8 py-3 border-t border-slate-100 text-sm font-medium text-slate-600">
-          <Link to="/products" className="hover:text-indigo-600 transition-colors">All Products</Link>
-          <Link to="/products?category=Electronics" className="hover:text-indigo-600 transition-colors">Electronics</Link>
-          <Link to="/products?category=Fashion" className="hover:text-indigo-600 transition-colors">Fashion</Link>
-          <Link to="/products?category=Accessories" className="hover:text-indigo-600 transition-colors">Accessories</Link>
-          <Link to="/products?category=Wearables" className="hover:text-indigo-600 transition-colors">Wearables</Link>
-          <Link to="/products?category=Footwear" className="hover:text-indigo-600 transition-colors">Footwear</Link>
-          <Link to="/products?category=Home %26 Living" className="hover:text-indigo-600 transition-colors">Home & Living</Link>
+          {navCategories.map(cat => {
+            const isActive = activeCategory.toLowerCase() === cat.param.toLowerCase();
+            return (
+              <Link
+                key={cat.param}
+                to={cat.path}
+                className={`transition-colors font-semibold py-0.5 ${
+                  isActive ? 'text-indigo-600 border-b-2 border-indigo-600' : 'hover:text-indigo-600'
+                }`}
+              >
+                {cat.label}
+              </Link>
+            );
+          })}
         </nav>
       </div>
 
@@ -216,10 +236,16 @@ export const Navbar = () => {
 
           <div className="flex flex-col gap-2 font-medium text-slate-700">
             <Link to="/" onClick={() => setMobileMenuOpen(false)} className="py-2 border-b border-slate-100">Home</Link>
-            <Link to="/products" onClick={() => setMobileMenuOpen(false)} className="py-2 border-b border-slate-100">All Products</Link>
-            <Link to="/products?category=Electronics" onClick={() => setMobileMenuOpen(false)} className="py-2 border-b border-slate-100">Electronics</Link>
-            <Link to="/products?category=Fashion" onClick={() => setMobileMenuOpen(false)} className="py-2 border-b border-slate-100">Fashion</Link>
-            <Link to="/products?category=Wearables" onClick={() => setMobileMenuOpen(false)} className="py-2 border-b border-slate-100">Wearables</Link>
+            {navCategories.map(cat => (
+              <Link
+                key={cat.param}
+                to={cat.path}
+                onClick={() => setMobileMenuOpen(false)}
+                className="py-2 border-b border-slate-100 flex items-center justify-between"
+              >
+                <span>{cat.label}</span>
+              </Link>
+            ))}
             {user ? (
               <Link to={isAdmin ? "/admin/dashboard" : "/dashboard"} onClick={() => setMobileMenuOpen(false)} className="py-2 text-indigo-600 font-semibold">
                 Go to {isAdmin ? 'Admin Dashboard' : 'Customer Dashboard'}
